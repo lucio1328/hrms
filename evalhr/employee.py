@@ -2,6 +2,7 @@ import frappe
 from frappe import _
 import json
 from datetime import datetime
+import random
 
 @frappe.whitelist(allow_guest=True)
 def import_employe():
@@ -62,6 +63,9 @@ def create_employee(emp_data):
     #     if existing_employee:
     #         return frappe.get_doc("Employee", existing_employee)
 
+    departments = frappe.get_all("Department", pluck="name")
+    designations = frappe.get_all("Designation", pluck="name")
+
     employee = frappe.new_doc("Employee")
 
 
@@ -71,6 +75,9 @@ def create_employee(emp_data):
     employee.date_of_birth = emp_data.get("date_naissance")
     employee.date_of_joining = emp_data.get("date_embauche")
     employee.company = emp_data.get("company")
+
+    employee.department = random.choice(departments)
+    employee.designation = random.choice(designations)
 
 
     # employee.custom_ref = emp_data.get("ref")
@@ -97,9 +104,9 @@ def parse_date(date_str):
 
 def map_gender(gender):
     """Map le genre vers les valeurs attendues par ERPNext"""
-    gender = (gender or "")
-    if gender in ("m", "male", "homme", "h","Masculin"):
+    gender = (gender or "").lower()
+    if gender in ("m", "male", "homme", "h","masculin"):
         return "Male"
-    elif gender in ("f", "female", "femme","Feminin"):
+    elif gender in ("f", "female", "femme","feminin"):
         return "Female"
     return "Other"
