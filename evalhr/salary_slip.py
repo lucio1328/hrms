@@ -19,7 +19,6 @@ def import_salary_data():
         created_slips = []
         created_assignments = []
         created_payments = []
-        errors = []
 
         for row in salary_data:
             try:
@@ -32,15 +31,13 @@ def import_salary_data():
                 end_date = get_last_day(start_date)
 
                 if not frappe.db.exists("Employee", {"name": ref_employe, "status": "Active"}):
-                    errors.append(f"Employé {ref_employe} introuvable ou inactif")
-                    continue
+                    frappe.throw(f"Employé {ref_employe} introuvable ou inactif")
 
                 employee = frappe.get_doc("Employee", ref_employe)
                 company = employee.company
 
                 if not frappe.db.exists("Salary Structure", salary_structure):
-                    errors.append(f"Structure de salaire {salary_structure} non trouvée")
-                    continue
+                    frappe.throw(f"Structure de salaire {salary_structure} non trouvée")
 
                 slip_exists = frappe.db.exists("Salary Slip", {
                     "employee": ref_employe,
@@ -50,10 +47,9 @@ def import_salary_data():
                 })
 
                 if slip_exists:
-                    errors.append(
+                    frappe.throw(
                         f"Fiche de Paie de l'employé {ref_employe} déjà créée pour la période {start_date.strftime('%Y-%m-%d')} à {end_date.strftime('%Y-%m-%d')}"
                     )
-                    continue
 
                 assignment = assign_structure_to_employee(
                     ref_employe, salary_structure, start_date, company, salaire_base
@@ -64,25 +60,26 @@ def import_salary_data():
                 slip.salary_structure = salary_structure
                 slip.start_date = start_date
                 slip.end_date = end_date
-                # slip.posting_date = nowdate()
                 slip.posting_date = start_date
                 slip.company = company
                 slip.payroll_frequency = "Monthly"
                 slip.insert(ignore_permissions=True)
-                # slip.run_salary_structure()
                 slip.calculate_net_pay()
                 slip.save()
                 slip.submit()
 
-
+                # Optionnel, décommenter si besoin
                 # payment_entry = create_payment_entry(employee, slip)
+
+                created_slips.append(slip)
+                created_assignments.append(assignment)
+                # created_payments.append(payment_entry) # si décommenté
 
             except Exception as e:
                 return format_response(
                     status="error",
                     message=str(e) or _("Une erreur est survenue durant la création des fiches de paie."),
                 )
-
 
         server_messages = frappe.local.response.get("_server_messages")
         main_message = None
@@ -125,6 +122,7 @@ def import_salary_data():
             message=_("Erreur lors de l'import: {0}").format(str(e))
         )
 
+# Fonctions auxiliaires inchangées
 def assign_structure_to_employee(employee, salary_structure, start_date, company, salaire_base):
     existing_assignment = frappe.db.exists("Salary Structure Assignment", {
         "employee": employee,
@@ -145,6 +143,7 @@ def assign_structure_to_employee(employee, salary_structure, start_date, company
     assignment.insert(ignore_permissions=True)
     assignment.submit()
     return assignment
+
 
 def create_payment_entry(employee, salary_slip):
     try:

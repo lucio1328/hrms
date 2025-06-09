@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 import json
+import re
 
 @frappe.whitelist(allow_guest=True)
 def import_grille_salaire():
@@ -12,6 +13,35 @@ def import_grille_salaire():
             return {
                 "status": "error",
                 "message": _("Le champ 'grilles' est requis et doit être une liste.")
+            }
+
+        abbr_list = set()
+        formule_list = []
+
+        for idx, row in enumerate(grille, start=1):
+            abbr = row.get("abbr")
+            formule = row.get("valeur")
+            if abbr:
+                abbr_list.add(abbr.strip())
+            if formule:
+                formule_list.append((idx, formule.strip()))
+
+        invalid_formules = []
+        abbr_pattern = r'\b([A-Z]{2,})\b'
+
+        for idx, formule in formule_list:
+            referenced_abbrs = re.findall(abbr_pattern, formule)
+            for ref in referenced_abbrs:
+                if ref not in abbr_list:
+                    invalid_formules.append((idx, formule, ref))
+
+        if invalid_formules:
+            message = _("Formules invalides : ")
+            for idx, f, ref in invalid_formules:
+                message += f"\n- Ligne {idx} : '{f}' référence une abbr inconnue : '{ref}'"
+            return {
+                "status": "error",
+                "message": message
             }
 
         processed_structures = {}

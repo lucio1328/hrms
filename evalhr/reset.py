@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def reset():
     """
     Réinitialise uniquement les données des tables liées à la paie :
