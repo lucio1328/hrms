@@ -47,9 +47,10 @@ def import_salary_data():
                 })
 
                 if slip_exists:
-                    frappe.throw(
-                        f"Fiche de Paie de l'employé {ref_employe} déjà créée pour la période {start_date.strftime('%Y-%m-%d')} à {end_date.strftime('%Y-%m-%d')}"
+                    frappe.msgprint(
+                        f"Fiche de paie déjà existante pour {ref_employe} ({start_date.strftime('%Y-%m-%d')} à {end_date.strftime('%Y-%m-%d')}), sautée."
                     )
+                    continue
 
                 assignment = assign_structure_to_employee(
                     ref_employe, salary_structure, start_date, company, salaire_base
