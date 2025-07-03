@@ -1,19 +1,18 @@
 {
  "content": null,
- "creation": "2025-06-04 14:29:09.390795",
+ "creation": "2025-06-04 08:24:13.467084",
  "docstatus": 0,
  "doctype": "Page",
  "idx": 0,
- "modified": "2025-06-04 14:29:09.390795",
+ "modified": "2025-06-04 08:24:13.467084",
  "modified_by": "Administrator",
- "module": "reset_hr",
- "name": "reset_hr",
+ "module": "reset-hr",
+ "name": "reset-page-hr",
  "owner": "Administrator",
- "page_name": "reset_hr",
+ "page_name": "reset-page-hr",
  "roles": [],
  "script": null,
  "standard": "Yes",
  "style": null,
- "system_page": 0,
- "title": "reset_hr"
+ "system_page": 0
 }

@@ -1,78 +1,100 @@
-import frappe
-from frappe import _
+import frappe # type: ignore
+from frappe import _ # type: ignore
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def reset():
     """
-    Réinitialise uniquement les données des tables liées à la paie :
-    Employee, Salary Component, Salary Structure, Salary Structure Assignment,
-    Salary Slip, Payroll Entry, Payroll Period.
-
-    Returns:
-        dict: Résultat de l'opération avec statut et détails
+    Réinitialise toutes les données des tables liées à la gestion de la paie.
     """
-
-    ALLOWED_TABLES = [
+    payroll_doctypes = [
         "Employee",
-        "Salary Component",
+        "Salary Slip",
+        "Salary Slip Deduction",
+        "Salary Slip Earning",
         "Salary Structure",
         "Salary Structure Assignment",
-        "Salary Slip",
+        "Salary Detail",
+        "Salary Component",
+        "Additional Salary",
+        "Employee Tax Exemption Declaration",
+        "Employee Tax Exemption Proof Submission",
+        "Employee Tax Exemption Category",
+        "Employee Tax Exemption Sub Category",
         "Payroll Entry",
-        "Payroll Period"
+        "Payroll Period",
+        "Process Payroll",
+        "Timesheet"
+    ]
+
+    # Tables protégées à ne jamais toucher
+    PROTECTED_TABLES = [
+        "User", "Role", "Module Def", "DocType",
+        "DocField", "Custom Field", "Property Setter"
     ]
 
     results = {}
     tables_cleared = 0
     skipped_tables = []
 
-    for table in ALLOWED_TABLES:
+    for doctype in payroll_doctypes:
         try:
-            table_name = f"tab{table}"
-
-            # Vérifie si le DocType existe
-            if not frappe.db.exists("DocType", table):
-                results[table] = _("DocType inexistant")
-                skipped_tables.append(table)
+            if doctype in PROTECTED_TABLES:
+                results[doctype] = _("Table protégée - non modifiable")
+                skipped_tables.append(doctype)
                 continue
 
-            # Vérifie les permissions
-            if not frappe.has_permission(table, "write"):
-                results[table] = _("Permission refusée")
-                skipped_tables.append(table)
+            # Vérification du DocType
+            if not frappe.db.exists("DocType", doctype):
+                results[doctype] = _("DocType inexistant")
+                skipped_tables.append(doctype)
                 continue
 
-            # Exécution du TRUNCATE
+            if not frappe.has_permission(doctype, "write"):
+                results[doctype] = _("Permission refusée")
+                skipped_tables.append(doctype)
+                continue
+
+            # Suppression des données
+            table_name = f"tab{doctype}"
             frappe.db.sql(f"TRUNCATE `{table_name}`")
-            results[table] = _("Succès")
+            results[doctype] = _("Succès")
             tables_cleared += 1
 
         except Exception as e:
-            frappe.log_error(frappe.get_traceback(), _("Erreur lors de la réinitialisation de {0}").format(table))
-            results[table] = _("Erreur: {0}").format(str(e))
-            skipped_tables.append(table)
+            frappe.log_error(title="Erreur réinitialisation paie", message=frappe.get_traceback())
+            results[doctype] = _("Erreur: {0}").format(str(e))
+            skipped_tables.append(doctype)
 
-    # Commit ou rollback
     if tables_cleared > 0:
         frappe.db.commit()
     else:
         frappe.db.rollback()
 
-    # Statistiques
-    total_tables = len(ALLOWED_TABLES)
-    success_rate = (tables_cleared / total_tables * 100) if total_tables > 0 else 0
+    total = len(payroll_doctypes)
+    success_rate = round((tables_cleared / total) * 100, 2) if total > 0 else 0
 
     return {
-        "success": tables_cleared > 0,
-        "results": results,
-        "stats": {
-            "total": total_tables,
-            "cleared": tables_cleared,
-            "skipped": len(skipped_tables),
-            "success_rate": round(success_rate, 2)
-        },
+        "status":"success",
         "message": _(
-            "Opération terminée: {0} tables vidées sur {1} demandées ({2}% de succès)"
-        ).format(tables_cleared, total_tables, round(success_rate, 2))
+            "Réinitialisation terminée : {0} sur {1} tables vidées ({2}% de succès)."
+        ).format(tables_cleared, total, success_rate)
     }
 
+
+
+
+# DELETE FROM `tabSalary Detail`;
+# DELETE FROM `tabAdditional Salary`;
+# DELETE FROM `tabEmployee Tax Exemption Proof Submission`;
+# DELETE FROM `tabEmployee Tax Exemption Declaration`;
+# DELETE FROM `tabEmployee Tax Exemption Sub Category`;
+# DELETE FROM `tabEmployee Tax Exemption Category`;
+# DELETE FROM `tabSalary Slip`;
+# DELETE FROM `tabSalary Structure Assignment`;
+# DELETE FROM `tabSalary Structure`;
+# DELETE FROM `tabSalary Component`;
+# DELETE FROM `tabPayroll Entry`;
+# DELETE FROM `tabPayroll Period`;
+# DELETE FROM `tabProcess Payroll`;
+# DELETE FROM `tabTimesheet`;
+# DELETE FROM `tabEmployee`;

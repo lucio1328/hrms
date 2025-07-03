@@ -1,8 +1,7 @@
-import frappe
-from frappe import _
+import frappe # type: ignore
+from frappe import _ # type: ignore
 import json
 from datetime import datetime
-import random
 
 @frappe.whitelist(allow_guest=True)
 def import_employe():
@@ -11,7 +10,7 @@ def import_employe():
     Retourne une correspondance ref -> nom de l'employé
     """
     try:
-        # Récupérer le JSON depuis le body de la requête
+       
         data = frappe.request.get_json()
         employees = data.get("employees")  # attend {"employees": [ {...}, {...} ]}
 
@@ -49,39 +48,33 @@ def create_company(company_name):
     company = frappe.new_doc("Company")
     company.company_name = company_name
     company.abbr = company_name[:3].upper()
-    company.default_currency = "EURO"
+    company.default_currency = "EUR"
     company.country = "Madagascar"
-    company.default_holiday_list = "Weekend"
+    company.default_holiday_list = "Vacances"
     company.insert()
     return company
 
 def create_employee(emp_data):
     """Crée un nouvel employé à partir des données"""
-
+    
     # if emp_data.get("ref"):
     #     existing_employee = frappe.db.get_value("Employee", {"custom_ref": emp_data.get("ref")}, "name")
     #     if existing_employee:
     #         return frappe.get_doc("Employee", existing_employee)
-
-    departments = frappe.get_all("Department", pluck="name")
-    designations = frappe.get_all("Designation", pluck="name")
-
+    
     employee = frappe.new_doc("Employee")
-
-
+    
+    
     employee.first_name = emp_data.get("prenom", "")
     employee.last_name = emp_data.get("nom", "")
     employee.gender = map_gender(emp_data.get("genre", ""))
     employee.date_of_birth = emp_data.get("date_naissance")
     employee.date_of_joining = emp_data.get("date_embauche")
     employee.company = emp_data.get("company")
-
-    employee.department = random.choice(departments)
-    employee.designation = random.choice(designations)
-
-
+     
+    
     # employee.custom_ref = emp_data.get("ref")
-
+    
     employee.insert()
     return employee
 
@@ -90,9 +83,9 @@ def parse_date(date_str):
     """Convertit une date string en format YYYY-MM-DD"""
     if not date_str:
         return None
-
+    
     try:
-
+         
         for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%d.%m.%Y"):
             try:
                 return datetime.strptime(date_str, fmt).strftime("%Y-%m-%d")

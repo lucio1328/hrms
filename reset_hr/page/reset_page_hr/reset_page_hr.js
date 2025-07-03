@@ -1,4 +1,4 @@
-frappe.pages['reset_hr'].on_page_load = function(wrapper) {
+frappe.pages['reset-page-hr'].on_page_load = function(wrapper) {
 	const page = frappe.ui.make_app_page({
 		parent: wrapper,
 		title: __('Réinitialisation des données'),
@@ -50,26 +50,15 @@ frappe.pages['reset_hr'].on_page_load = function(wrapper) {
 
 	// Récupération des doctypes
 	frappe.call({
-		method: 'hrms.reset_hr.page.reset_hr.reset_hr.get_all_doctypes',
+		method: 'hrms.reset_hr.page.reset_page_hr.reset_page_hr.get_all_doctypes',
 		callback: function(r) {
 			if (r.message) {
 				r.message.sort((a, b) => a.name.localeCompare(b.name));
 
-				const PRESELECTED = [
-					"Employee",
-					"Salary Component",
-					"Salary Structure",
-					"Salary Structure Assignment",
-					"Salary Slip",
-					"Payroll Entry",
-					"Payroll Period"
-				];
-
 				r.message.forEach(dt => {
-					const isPreselected = PRESELECTED.includes(dt.name);
 					const item = $(`
 						<div class="form-check mb-2" data-name="${dt.name}">
-							<input class="form-check-input doctype-checkbox" type="checkbox" value="${dt.name}" id="${dt.name}" ${isPreselected ? 'checked' : ''}>
+							<input class="form-check-input doctype-checkbox" type="checkbox" value="${dt.name}" id="${dt.name}">
 							<label class="form-check-label" for="${dt.name}">${dt.name}</label>
 						</div>
 					`);
@@ -117,7 +106,7 @@ frappe.pages['reset_hr'].on_page_load = function(wrapper) {
 				const $btn = $(this).prop('disabled', true).text(__('Traitement...'));
 
 				frappe.call({
-					method: 'hrms.reset_hr.page.reset_hr.reset_hr.reinitialiser_donnees',
+					method: 'hrms.reset_hr.page.reset_page_hr.reset_page_hr.reinitialiser_donnees',
 					args: { tables: selected },
 					callback: function(r) {
 						frappe.show_alert({
